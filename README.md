@@ -1,57 +1,81 @@
-# Sample Hardhat 3 Beta Project (`mocha` and `ethers`)
+# DEX AMM Project
 
-This project showcases a Hardhat 3 Beta project using `mocha` for tests and the `ethers` library for Ethereum interactions.
+## Overview
+This project implements a simplified Decentralized Exchange (DEX) using the
+Automated Market Maker (AMM) model similar to Uniswap V2. It allows users to
+add and remove liquidity, swap between two ERC-20 tokens, and earn trading
+fees as liquidity providers without relying on centralized intermediaries.
 
-To learn more about the Hardhat 3 Beta, please visit the [Getting Started guide](https://hardhat.org/docs/getting-started#getting-started-with-hardhat-3). To share your feedback, join our [Hardhat 3 Beta](https://hardhat.org/hardhat3-beta-telegram-group) Telegram group or [open an issue](https://github.com/NomicFoundation/hardhat/issues/new) in our GitHub issue tracker.
+## Features
+- Initial and subsequent liquidity provision
+- LP token minting and burning
+- Token swaps using constant product formula (x * y = k)
+- 0.3% trading fee distributed to liquidity providers
+- Dynamic price calculation based on pool reserves
+- Extensive test coverage with edge case handling
+- Docker-based reproducible environment
 
-## Project Overview
+## Architecture
+The system consists of a core DEX smart contract responsible for managing
+liquidity pools, LP accounting, and swap logic. A MockERC20 contract is used
+for testing and simulation. All interactions are permissionless and executed
+on-chain.
 
-This example project includes:
+## Mathematical Implementation
 
-- A simple Hardhat configuration file.
-- Foundry-compatible Solidity unit tests.
-- TypeScript integration tests using `mocha` and ethers.js
-- Examples demonstrating how to connect to different types of networks, including locally simulating OP mainnet.
+### Constant Product Formula
+The AMM follows the invariant:
 
-## Usage
+x * y = k
 
-### Running Tests
+Where:
+- x = reserve of Token A
+- y = reserve of Token B
+- k = constant product
 
-To run all the tests in the project, execute the following command:
+### Fee Calculation
+A 0.3% fee is applied to every swap:
 
-```shell
+amountInWithFee = amountIn * 997 / 1000
+
+The fee remains in the pool, increasing k and benefiting liquidity providers.
+
+### LP Token Minting
+Initial liquidity:
+liquidityMinted = sqrt(amountA * amountB)
+
+Subsequent liquidity:
+liquidityMinted = (amountA * totalLiquidity) / reserveA
+
+## Setup Instructions
+
+### Using Docker
+```bash
+docker-compose up -d
+docker-compose exec app npm test
+docker-compose down
+```
+
+### Running Locally
+```bash
+npm install
+npx hardhat compile
 npx hardhat test
+npx hardhat coverage
 ```
 
-You can also selectively run the Solidity or `mocha` tests:
+## Contract Addresses
+This project is not deployed to a public testnet. All contracts are tested
+locally using Hardhat.
 
-```shell
-npx hardhat test solidity
-npx hardhat test mocha
-```
+## Known Limitations
+- Only a single token pair is supported
+- No slippage protection or transaction deadlines
+- No flash swaps or multi-hop trades
 
-### Make a deployment to Sepolia
-
-This project includes an example Ignition module to deploy the contract. You can deploy this module to a locally simulated chain or to Sepolia.
-
-To run the deployment to a local chain:
-
-```shell
-npx hardhat ignition deploy ignition/modules/Counter.ts
-```
-
-To run the deployment to Sepolia, you need an account with funds to send the transaction. The provided Hardhat configuration includes a Configuration Variable called `SEPOLIA_PRIVATE_KEY`, which you can use to set the private key of the account you want to use.
-
-You can set the `SEPOLIA_PRIVATE_KEY` variable using the `hardhat-keystore` plugin or by setting it as an environment variable.
-
-To set the `SEPOLIA_PRIVATE_KEY` config variable using `hardhat-keystore`:
-
-```shell
-npx hardhat keystore set SEPOLIA_PRIVATE_KEY
-```
-
-After setting the variable, you can run the deployment with the Sepolia network:
-
-```shell
-npx hardhat ignition deploy --network sepolia ignition/modules/Counter.ts
-```
+## Security Considerations
+- Solidity 0.8+ overflow protection
+- Reentrancy-safe state updates
+- Input validation for zero and invalid amounts
+- Fee applied before swap calculation
+    
